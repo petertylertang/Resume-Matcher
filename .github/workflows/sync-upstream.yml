@@ -1,0 +1,22 @@
+name: Sync fork from upstream
+
+# Keeps this fork's default branch current with srbhr/Resume-Matcher so the source
+# stays fresh for porting features into autopilot. Weekly + on-demand. Uses
+# `gh repo sync`, which fast-forwards from upstream and fails safely (no --force) if
+# the fork has diverged — so it never clobbers local changes.
+on:
+  schedule:
+    - cron: '0 8 * * 1'   # Mondays 08:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync default branch from srbhr/Resume-Matcher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh repo sync ${{ github.repository }} --source srbhr/Resume-Matcher
