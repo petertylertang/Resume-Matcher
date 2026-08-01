@@ -150,7 +150,7 @@ export const PROVIDER_INFO: Record<
     defaultModel: 'custom-model',
     requiresKey: false,
   },
-  anthropic: { name: 'Anthropic', defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true },
+  anthropic: { name: 'Anthropic', defaultModel: 'claude-sonnet-5', requiresKey: true },
   openrouter: {
     name: 'OpenRouter',
     defaultModel: 'deepseek/deepseek-v4-flash',

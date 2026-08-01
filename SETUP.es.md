@@ -214,7 +214,7 @@ Resume Matcher admite múltiples proveedores de IA. Puedes configurarlo desde la
 | Proveedor | Configuración | Obtener API key |
 |----------|---------------|-----------------|
 | **OpenAI** | `LLM_PROVIDER=openai`<br>`LLM_MODEL=gpt-5-nano-2025-08-07` | [platform.openai.com](https://platform.openai.com/api-keys) |
-| **Anthropic** | `LLM_PROVIDER=anthropic`<br>`LLM_MODEL=claude-haiku-4-5-20251001` | [console.anthropic.com](https://console.anthropic.com/) |
+| **Anthropic** | `LLM_PROVIDER=anthropic`<br>`LLM_MODEL=claude-sonnet-5` | [console.anthropic.com](https://console.anthropic.com/) |
 | **Google Gemini** | `LLM_PROVIDER=gemini`<br>`LLM_MODEL=gemini-3-flash-preview` | [aistudio.google.com](https://aistudio.google.com/app/apikey) |
 | **OpenRouter** | `LLM_PROVIDER=openrouter`<br>`LLM_MODEL=deepseek/deepseek-chat` | [openrouter.ai](https://openrouter.ai/keys) |
 | **DeepSeek** | `LLM_PROVIDER=deepseek`<br>`LLM_MODEL=deepseek-chat` | [platform.deepseek.com](https://platform.deepseek.com/) |
@@ -226,7 +226,7 @@ Ejemplo de `.env` para Anthropic:
 
 ```env
 LLM_PROVIDER=anthropic
-LLM_MODEL=claude-haiku-4-5-20251001
+LLM_MODEL=claude-sonnet-5
 LLM_API_KEY=sk-ant-your-key-here
 ```
 

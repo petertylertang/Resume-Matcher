@@ -312,6 +312,18 @@ _PROVIDER_KEY_MAP: dict[str, str] = {
 }
 
 
+# Anthropic models that REJECT sampling parameters outright (HTTP 400) rather
+# than ignoring them. Substring-matched against the LiteLLM-formatted name, so
+# the provider prefix and any suffix are tolerated.
+_NO_SAMPLING_PARAM_MODELS: tuple[str, ...] = (
+    "claude-opus-4",   # 4.7/4.8 reject; 4.5/4.6 accept but are conservative here
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-fable-5",
+    "claude-mythos-5",
+)
+
+
 # Providers with a single canonical endpoint, applied when the user has not
 # stored an api_base. OpenCode serves two OpenAI-compatible APIs off one key:
 # /zen/go/v1 is the Go subscription (flat rate) and /zen/v1 is Zen
@@ -932,8 +944,14 @@ def _supports_temperature(model_name: str, temperature: float | None = None) -> 
         return False
 
     # Provider-specific restrictions not captured by the registry.
-    # Anthropic Opus 4.x deprecated temperature entirely.
-    if "claude-opus-4" in model_name.lower():
+    # Anthropic REMOVED sampling parameters (temperature/top_p/top_k) starting
+    # with Opus 4.7 — a non-default value is a 400, not a silently ignored
+    # field, and that now includes the current tier (Opus 5, Sonnet 5). The
+    # older `claude-opus-4` prefix stays: 4.5/4.6 still accept temperature, but
+    # skipping it there only costs a knob, while sending it to a model that
+    # rejects it fails the request.
+    lowered = model_name.lower()
+    if any(m in lowered for m in _NO_SAMPLING_PARAM_MODELS):
         return False
 
     # Moonshot kimi-k2.6 only allows temperature=1.
