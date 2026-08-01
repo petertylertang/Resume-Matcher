@@ -13,7 +13,8 @@ Backend uses LiteLLM to support multiple providers through a unified API:
 | **Anthropic** | Cloud | Claude Haiku 4.5 |
 | **Google Gemini** | Cloud | Gemini 3 Flash |
 | **OpenRouter** | Cloud | Access to multiple models |
-| **DeepSeek** | Cloud | DeepSeek Chat |
+| **DeepSeek** | Cloud | DeepSeek V4 Flash / V4 Pro (the `deepseek-chat` and `deepseek-reasoner` aliases were retired 2026-07-24) |
+| **OpenCode Go** | Cloud | Flat-rate subscription over open models. Base URL is preset to `https://opencode.ai/zen/go/v1` — the sibling `/zen/v1` is Zen pay-per-use and 401s on paid models without credit |
 
 ## API Key Handling
 

@@ -11,13 +11,17 @@ live, and they pin behavior we recently shipped:
   - _strip_thinking_tags  — deepseek-r1 / qwq <think> stripping
 """
 
+from unittest.mock import patch
+
 import pytest
 
+from app.config import settings
 from app.llm import (
     LLMConfig,
     _effective_api_key,
     _normalize_api_base,
     _strip_thinking_tags,
+    get_llm_config,
     get_model_name,
     resolve_api_key,
 )
@@ -47,6 +51,11 @@ class TestGetModelName:
     def test_openai_compatible_uses_openai_prefix(self):
         # llama.cpp / vLLM / LM Studio served via the OpenAI client.
         assert get_model_name(_cfg("openai_compatible", "llama-3.1-8b")) == "openai/llama-3.1-8b"
+
+    def test_opencode_uses_openai_prefix(self):
+        # OpenCode Go is an OpenAI-compatible gateway; the preset api_base is
+        # what distinguishes it, not the LiteLLM handler.
+        assert get_model_name(_cfg("opencode", "deepseek-v4-flash")) == "openai/deepseek-v4-flash"
 
     def test_openrouter_nested_prefix(self):
         assert (
@@ -82,6 +91,37 @@ class TestGetModelName:
 # ---------------------------------------------------------------------------
 
 
+class TestProviderDefaultApiBase:
+    """A provider with exactly one correct endpoint should not make the user
+    type it. OpenCode is the case that motivated this: one key serves both
+    /zen/go/v1 (Go subscription) and /zen/v1 (Zen pay-per-use), and picking
+    the wrong one 401s on paid models in a way that looks like an entitlement
+    problem rather than a URL problem."""
+
+    @patch("app.llm.load_config_file")
+    def test_opencode_defaults_to_the_go_subscription_path(self, mock_load):
+        mock_load.return_value = {"provider": "opencode", "model": "deepseek-v4-flash"}
+        with patch.object(settings, "llm_api_base", None):
+            assert get_llm_config().api_base == "https://opencode.ai/zen/go/v1"
+
+    @patch("app.llm.load_config_file")
+    def test_an_explicit_api_base_still_wins(self, mock_load):
+        mock_load.return_value = {
+            "provider": "opencode",
+            "model": "deepseek-v4-flash",
+            "api_base": "https://opencode.ai/zen/v1",
+        }
+        assert get_llm_config().api_base == "https://opencode.ai/zen/v1"
+
+    @patch("app.llm.load_config_file")
+    def test_providers_without_a_canonical_endpoint_are_untouched(self, mock_load):
+        """openai_compatible has no single right answer — it must stay None so
+        a missing base fails loudly instead of being guessed at."""
+        mock_load.return_value = {"provider": "openai_compatible", "model": "m"}
+        with patch.object(settings, "llm_api_base", None):
+            assert get_llm_config().api_base is None
+
+
 class TestNormalizeApiBase:
     def test_none_and_blank(self):
         assert _normalize_api_base("openai", None) is None
@@ -95,6 +135,15 @@ class TestNormalizeApiBase:
         assert (
             _normalize_api_base("openai_compatible", "http://localhost:8080/v1")
             == "http://localhost:8080/v1"
+        )
+
+    def test_opencode_preserves_the_go_path_as_is(self):
+        # /zen/go/v1 is the flat-rate subscription; /zen/v1 is pay-per-use and
+        # 401s on paid models without credit. Stripping or rewriting either
+        # would silently move the user between two different bills.
+        assert (
+            _normalize_api_base("opencode", "https://opencode.ai/zen/go/v1")
+            == "https://opencode.ai/zen/go/v1"
         )
 
     def test_openai_strips_only_trailing_slash(self):

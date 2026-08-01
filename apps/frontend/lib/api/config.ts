@@ -8,6 +8,7 @@ export type LLMProvider =
   | 'openrouter'
   | 'gemini'
   | 'deepseek'
+  | 'opencode'
   | 'groq'
   | 'ollama';
 
@@ -152,11 +153,19 @@ export const PROVIDER_INFO: Record<
   anthropic: { name: 'Anthropic', defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true },
   openrouter: {
     name: 'OpenRouter',
-    defaultModel: 'deepseek/deepseek-chat',
+    defaultModel: 'deepseek/deepseek-v4-flash',
+    requiresKey: true,
+  },
+  // OpenCode Go: flat-rate subscription gateway. The backend supplies the
+  // base URL (_PROVIDER_DEFAULT_API_BASE) — the subscription path, not the
+  // pay-per-use one — so the user only has to bring a key.
+  opencode: {
+    name: 'OpenCode Go',
+    defaultModel: 'deepseek-v4-flash',
     requiresKey: true,
   },
   gemini: { name: 'Google Gemini', defaultModel: 'gemini-3-flash-preview', requiresKey: true },
-  deepseek: { name: 'DeepSeek', defaultModel: 'deepseek-chat', requiresKey: true },
+  deepseek: { name: 'DeepSeek', defaultModel: 'deepseek-v4-flash', requiresKey: true },
   groq: { name: 'Groq', defaultModel: 'llama-3.3-70b-versatile', requiresKey: true },
   ollama: { name: 'Ollama (Local)', defaultModel: 'gemma3:4b', requiresKey: false },
 };
@@ -379,6 +388,7 @@ export type ApiKeyProvider =
   | 'deepseek'
   | 'groq'
   | 'openai_compatible'
+  | 'opencode'
   | 'ollama';
 
 // Map an LLM provider (the active-provider axis) to its key-store provider
@@ -406,6 +416,7 @@ export interface ApiKeysUpdateRequest {
   openrouter?: string;
   deepseek?: string;
   groq?: string;
+  opencode?: string;
   openai_compatible?: string;
   ollama?: string;
 }
@@ -424,6 +435,7 @@ export const API_KEY_PROVIDER_INFO: Record<ApiKeyProvider, { name: string; descr
     openrouter: { name: 'OpenRouter', description: 'Access multiple providers' },
     deepseek: { name: 'DeepSeek', description: 'DeepSeek chat models' },
     groq: { name: 'Groq', description: 'Llama, Mixtral, Gemma on Groq' },
+    opencode: { name: 'OpenCode Go', description: 'Flat-rate open models (DeepSeek, Kimi, GLM)' },
     openai_compatible: { name: 'OpenAI-Compatible', description: 'Self-hosted / proxy endpoints' },
     ollama: { name: 'Ollama', description: 'Local Ollama server' },
   };

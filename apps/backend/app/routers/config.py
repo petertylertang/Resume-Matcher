@@ -440,6 +440,7 @@ SUPPORTED_PROVIDERS = [
     "deepseek",
     "groq",
     "openai_compatible",
+    "opencode",
     "ollama",
 ]
 
@@ -521,6 +522,13 @@ async def update_api_keys(request: ApiKeysUpdateRequest) -> ApiKeysUpdateRespons
         elif "deepseek" in stored_keys:
             del stored_keys["deepseek"]
         updated.append("deepseek")
+
+    if request.opencode is not None:
+        if request.opencode:
+            stored_keys["opencode"] = request.opencode
+        elif "opencode" in stored_keys:
+            del stored_keys["opencode"]
+        updated.append("opencode")
 
     if request.groq is not None:
         if request.groq:

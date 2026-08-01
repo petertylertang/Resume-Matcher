@@ -85,7 +85,7 @@ def _normalize_api_base(provider: str, api_base: str | None) -> str | None:
 
     # OpenAI / OpenAI-compatible: preserve the URL as-is. The OpenAI client
     # resolves paths correctly whether the base includes /v1 or not.
-    if provider in ("openai", "openai_compatible"):
+    if provider in ("openai", "openai_compatible", "opencode"):
         return base or None
 
     # Anthropic handler appends '/v1/messages'. If base already ends with '/v1',
@@ -302,12 +302,25 @@ def _scrub_secrets(text: str) -> str:
 _PROVIDER_KEY_MAP: dict[str, str] = {
     "openai": "openai",
     "openai_compatible": "openai_compatible",
+    "opencode": "opencode",
     "anthropic": "anthropic",
     "gemini": "google",
     "openrouter": "openrouter",
     "deepseek": "deepseek",
     "groq": "groq",
     "ollama": "ollama",
+}
+
+
+# Providers with a single canonical endpoint, applied when the user has not
+# stored an api_base. OpenCode serves two OpenAI-compatible APIs off one key:
+# /zen/go/v1 is the Go subscription (flat rate) and /zen/v1 is Zen
+# (pay-per-use). On a Go plan the Zen path returns 401 for paid models while
+# *-free models complete, which looks like a model-entitlement error rather
+# than a wrong URL — so default to the subscription path and let an explicit
+# api_base override it.
+_PROVIDER_DEFAULT_API_BASE: dict[str, str] = {
+    "opencode": "https://opencode.ai/zen/go/v1",
 }
 
 
@@ -387,6 +400,12 @@ def get_llm_config() -> LLMConfig:
 
     api_key = resolve_api_key(stored, provider)
 
+    api_base = stored.get("api_base", settings.llm_api_base)
+    if not (api_base or "").strip():
+        # Only for providers that HAVE one correct endpoint. Everything else
+        # keeps failing loudly on a missing base rather than guessing.
+        api_base = _PROVIDER_DEFAULT_API_BASE.get(provider)
+
     raw_re = stored.get("reasoning_effort", settings.reasoning_effort)
     # Normalize empty string to None — user explicitly cleared.
     reasoning_effort = raw_re if raw_re else None
@@ -395,7 +414,7 @@ def get_llm_config() -> LLMConfig:
         provider=provider,
         model=model,
         api_key=api_key,
-        api_base=stored.get("api_base", settings.llm_api_base),
+        api_base=api_base,
         reasoning_effort=reasoning_effort,
     )
 
@@ -413,6 +432,10 @@ def get_model_name(config: LLMConfig) -> str:
         # client handles the request; works for llama.cpp, vLLM, LM Studio,
         # and any server exposing the OpenAI Chat Completions API shape.
         "openai_compatible": "openai/",
+        # opencode is an OpenAI-compatible gateway, so it rides the same
+        # openai/ handler; what makes it its own provider is the preset
+        # api_base below (see _PROVIDER_DEFAULT_API_BASE).
+        "opencode": "openai/",
         "anthropic": "anthropic/",
         "openrouter": "openrouter/",
         "gemini": "gemini/",
