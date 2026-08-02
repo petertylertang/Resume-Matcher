@@ -757,6 +757,7 @@ class ApiKeysUpdateRequest(BaseModel):
     openrouter: str | None = None
     deepseek: str | None = None
     groq: str | None = None
+    opencode: str | None = None
     # Local/self-hosted providers that may sit behind an auth proxy.
     openai_compatible: str | None = None
     ollama: str | None = None

@@ -47,6 +47,9 @@ class TestSupportsTemperature:
             "supported_openai_params": ["temperature", "max_tokens"]
         }
         assert _supports_temperature("anthropic/claude-opus-4-7", 0.7) is False
+        # …and the current tier removed them too — a non-default value is a 400
+        assert _supports_temperature("anthropic/claude-opus-5", 0.7) is False
+        assert _supports_temperature("anthropic/claude-sonnet-5", 0.7) is False
         # Also check with temperature=1 — still deprecated
         assert _supports_temperature("anthropic/claude-opus-4-7", 1.0) is False
 

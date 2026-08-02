@@ -226,7 +226,7 @@ Open **<http://localhost:3000>** and configure your AI provider in Settings.
 |----------|-------------|-------|
 | **Ollama** | Local | Free, runs on your machine |
 | **OpenAI** | Cloud | GPT-5 Nano, GPT-4o |
-| **Anthropic** | Cloud | Claude Haiku 4.5 |
+| **Anthropic** | Cloud | Claude Sonnet 5, Claude Opus 5 |
 | **Google Gemini** | Cloud | Gemini 3 Flash |
 | **OpenRouter** | Cloud | Access to multiple models |
 | **DeepSeek** | Cloud | DeepSeek Chat |

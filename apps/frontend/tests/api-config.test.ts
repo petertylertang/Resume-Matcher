@@ -22,6 +22,7 @@ const ALL_PROVIDERS: LLMProvider[] = [
   'gemini',
   'deepseek',
   'groq',
+  'opencode',
   'ollama',
 ];
 
