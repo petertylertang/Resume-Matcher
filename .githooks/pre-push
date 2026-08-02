@@ -8,6 +8,7 @@
 #   1. backend test suite        (uv run pytest — LLM/eval tests excluded by default)
 #   2. frontend locale parity     (pure-Python check; guards the i18n build break)
 #   3. frontend test suite        (vitest — runs when Node is available, else skipped)
+#   4. frontend type check        (tsc --noEmit, ~3s — same availability rule)
 #
 # Activate once per clone:   git config core.hooksPath .githooks
 # Bypass intentionally:      git push --no-verify     (e.g. docs-only / WIP branch)
@@ -16,13 +17,20 @@
 # Notes:
 #  - Both checks always run so you see ALL failures, not just the first.
 #  - The backend suite is ~8s and makes NO network/LLM calls (evals are opt-in).
-#  - The frontend vitest suite runs only when Node is on PATH (git hooks may run
-#    without nvm's node); a full `tsc`/`next build` is intentionally NOT run here.
+#  - The frontend vitest suite and type check run only when Node is on PATH (git
+#    hooks may run without nvm's node). A full `next build` is still NOT run
+#    here — it is minutes, not seconds — but `tsc --noEmit` is ~3s and catches
+#    the type errors that a locale-parity check alone cannot see.
+#  - A skipped check is NAMED in the closing line. A gate that prints "passed"
+#    after silently skipping half of itself is worse than no gate: the green
+#    reads as "everything ran".
 
 set -uo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 status=0
+skipped=""
+note_skip() { skipped="${skipped:+$skipped, }$1"; }
 
 printf '\n── pre-push gate ────────────────────────────────────────\n'
 
@@ -46,6 +54,7 @@ if command -v python3 >/dev/null 2>&1; then
   fi
 else
   echo "  ⚠ python3 not found — skipping locale parity check" >&2
+  note_skip "locale parity (no python3)"
 fi
 
 # 3) Frontend test suite (vitest) — only when Node + the local binary are present
@@ -59,6 +68,25 @@ if command -v node >/dev/null 2>&1 && [ -x "$VITEST" ]; then
   fi
 else
   echo "  ⚠ node or vitest not available — skipping frontend tests" >&2
+  note_skip "frontend tests (no node/vitest)"
+fi
+
+# 4) Frontend type check — `tsc --noEmit`, ~3s.
+#    lib/i18n/messages.ts types the locale files off `typeof en`, so a missing
+#    key is a TYPE error; the locale-parity check above catches that one case
+#    but nothing else. This is the general gate — it is what would have caught
+#    the drift that "only surfaced post-merge in the Docker build". A full
+#    `next build` stays out: minutes, not seconds.
+TSC="$REPO_ROOT/apps/frontend/node_modules/.bin/tsc"
+if command -v node >/dev/null 2>&1 && [ -x "$TSC" ]; then
+  echo "▶ frontend : tsc --noEmit"
+  if ! ( cd "$REPO_ROOT/apps/frontend" && "$TSC" --noEmit ); then
+    echo "  ✗ frontend type check failed" >&2
+    status=1
+  fi
+else
+  echo "  ⚠ node or tsc not available — skipping type check" >&2
+  note_skip "type check (no node/tsc)"
 fi
 
 printf '─────────────────────────────────────────────────────────\n'
@@ -66,5 +94,9 @@ if [ "$status" -ne 0 ]; then
   echo "✗ pre-push gate FAILED — push aborted. Fix the above, or bypass with: git push --no-verify" >&2
   exit 1
 fi
-echo "✓ pre-push gate passed — pushing."
+if [ -n "$skipped" ]; then
+  echo "✓ pre-push gate passed, but SKIPPED: $skipped — pushing."
+else
+  echo "✓ pre-push gate passed (all checks ran) — pushing."
+fi
 exit 0

@@ -167,7 +167,16 @@ uv run pytest -m eval
 uv run pytest tests/unit/test_parser.py -q
 ```
 
-> `uv run pytest` is unaffected by the project's nvm/npm constraints — it's Python-only. Frontend `tsc`/`build`/lint are run separately and are out of scope for this backend phase.
+Frontend:
+
+```bash
+cd apps/frontend
+npm run test          # vitest
+npm run type-check    # tsc --noEmit (~3s) — also pre-push step 4
+npm run lint          # eslint
+```
+
+> `uv run pytest` is unaffected by the project's nvm/npm constraints — it's Python-only. Frontend `build` is run separately and is out of scope for this backend phase.
 
 ---
 
@@ -203,7 +212,7 @@ Net: **65 → 117 frontend tests**, all green. The `pre-push` gate runs this sui
 
 - ✅ ~~Frontend locale-parity test~~ — done (`i18n-locale-parity.test.ts` + the hook's `scripts/check_locale_parity.py`).
 - Decide coverage floors per module once the I/O surface is broadly covered (avoid a single global % that hides gaps).
-- A Node-aware `tsc`/`next build` gate (catches TS errors beyond locale drift) — deferred; needs reliable node-in-hook.
+- ✅ ~~A Node-aware `tsc` gate (catches TS errors beyond locale drift)~~ — done: `pre-push` step 4 runs `tsc --noEmit` (~3s) under the same node-availability rule as vitest, and `npm run type-check` exposes it directly. Verified it catches the locale drift class end-to-end (deleting one `fr.json` key fails `tsc` with TS2719). A full `next build` stays out — minutes, not seconds.
 - If GitHub Actions is ever reconsidered, run it on push to `dev`/`main` only (not on PRs).
 
 ---

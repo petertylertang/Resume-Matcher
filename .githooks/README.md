@@ -19,10 +19,16 @@ keeps `main`/`dev` green without touching contributor PRs.
    broke `next build` and only surfaced post-merge in the Docker job.
 3. **Frontend test suite** — `vitest run` in `apps/frontend`, but only when Node
    and the local vitest binary are present (git hooks may run without nvm's
-   `node` on `PATH`); otherwise skipped with a warning. A full `tsc`/`next build`
-   is intentionally not run here.
+   `node` on `PATH`); otherwise skipped with a warning.
+4. **Frontend type check** — `tsc --noEmit` in `apps/frontend` (~3s), same
+   availability rule as the test suite. `lib/i18n/messages.ts` types the locale
+   files off `typeof en`, so a missing key is a *type* error — check 2 catches
+   that one case, this is the general gate. A full `next build` is still not run
+   here: minutes, not seconds.
 
-All checks always run, so you see **all** failures at once.
+All checks always run, so you see **all** failures at once — and any that were
+SKIPPED are named in the closing line, so a green never reads as "everything
+ran".
 
 ## Activate (once per clone)
 
@@ -51,6 +57,7 @@ git config --unset core.hooksPath   # disable the hooks entirely
 cd apps/backend && uv run pytest          # backend suite
 python3 scripts/check_locale_parity.py    # locale parity (from repo root)
 cd apps/frontend && npm run test          # frontend suite (vitest)
+cd apps/frontend && npm run type-check    # tsc --noEmit
 ```
 
 See [`docs/agent/testing-strategy.md`](../docs/agent/testing-strategy.md) for the

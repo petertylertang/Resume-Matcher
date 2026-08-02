@@ -51,6 +51,7 @@ npm run test                                         # Run frontend tests (vites
 
 # Quality checks (from apps/frontend)
 npm run lint          # Lint frontend
+npm run type-check    # tsc --noEmit (also pre-push step 4)
 npm run format        # Format with Prettier
 
 # Build (from apps/frontend)
@@ -187,7 +188,7 @@ Before completing a task:
 
 - [ ] Code compiles without errors
 - [ ] Backend tests pass (`uv run pytest`); frontend tests pass (`npm run test`)
-- [ ] `npm run lint` passes
+- [ ] `npm run lint` and `npm run type-check` pass
 - [ ] UI changes follow Swiss International Style
 - [ ] Python functions have type hints
 - [ ] Schema/prompt changes documented
